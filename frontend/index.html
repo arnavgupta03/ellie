@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Elli - AI Elevator Navigator</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body {
+      font-family: 'Inter', sans-serif; /* A common Tailwind font */
+    }
+    /* Custom scrollbar for a more professional dark theme */
+    ::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+    ::-webkit-scrollbar-thumb {
+      background-color: #4b5563; /* gray-600 */
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-track {
+      background-color: #1f2937; /* gray-800 */
+    }
+  </style>
+<script>
+  // IMPORTANT: Define process.env.API_KEY before any module imports.
+  // In a real deployment, this would be set through environment variables
+  // by the build/hosting environment, not hardcoded in client-side JS.
+  // For this development environment, you can temporarily set it here
+  // or ensure your development server provides it.
+  // Example: window.process = { env: { API_KEY: "YOUR_GEMINI_API_KEY_HERE" } };
+  // Ensure it IS NOT an empty string if you set it manually.
+  // If your setup already makes process.env.API_KEY available, you can remove this.
+  if (!window.process) {
+    window.process = { env: {} };
+  }
+  // To use the application, replace "YOUR_API_KEY_HERE" with your actual Gemini API key.
+  // DO NOT COMMIT YOUR API KEY TO A PUBLIC REPOSITORY.
+  // window.process.env.API_KEY = "YOUR_API_KEY_HERE"; 
+</script>
+<script type="importmap">
+{
+  "imports": {
+    "react-dom/": "https://esm.sh/react-dom@^19.1.0/",
+    "react/": "https://esm.sh/react@^19.1.0/",
+    "react": "https://esm.sh/react@^19.1.0",
+    "@google/genai": "https://esm.sh/@google/genai?bundle",
+    "sa": "https://esm.sh/sa@^0.2.50"
+  }
+}
+</script>
+<link rel="stylesheet" href="/index.css">
+</head>
+<body class="bg-gray-900"> {/* Updated background */}
+  <div id="root"></div>
+  <script type="module" src="/index.tsx"></script>
+</body>
+</html>

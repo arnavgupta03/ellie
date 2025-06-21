@@ -1,0 +1,8 @@
+{
+  "name": "Elli - AI Elevator Navigator",
+  "description": "A web application to find the nearest elevator on a given floor plan and display the path. Allows custom floor plan uploads and uses AI for analysis.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone"
+  ]
+}

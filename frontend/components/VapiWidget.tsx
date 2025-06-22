@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Vapi from '@vapi-ai/web';
 
 interface VapiWidgetProps {
@@ -16,6 +16,7 @@ const VapiWidget: React.FC<VapiWidgetProps> = ({
   const [isConnected, setIsConnected] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [transcript, setTranscript] = useState<Array<{role: string, text: string}>>([]);
+  const buttonRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
     const vapiInstance = new Vapi(apiKey);
@@ -56,10 +57,39 @@ const VapiWidget: React.FC<VapiWidgetProps> = ({
       console.error('Vapi error:', error);
     });
 
+    // Gamepad event listener for any button
+    let gamepadInterval: number;
+    let previousAnyButtonState = false;
+
+    const checkGamepadInput = () => {
+      const gamepads = navigator.getGamepads();
+      for (let i = 0; i < gamepads.length; i++) {
+        const gamepad = gamepads[i];
+        if (gamepad) {
+          // Check if any button is pressed
+          const anyButtonPressed = gamepad.buttons.some(button => button?.pressed);
+          
+          // Only trigger on button press (not held down)
+          if (anyButtonPressed && !previousAnyButtonState && !isConnected) {
+            console.log('Gamepad button pressed, clicking Talk to Assistant button');
+            buttonRef.current?.click();
+          }
+          previousAnyButtonState = anyButtonPressed;
+          break; // Only check the first connected gamepad
+        }
+      }
+    };
+
+    // Check for gamepad input every 100ms
+    gamepadInterval = window.setInterval(checkGamepadInput, 100);
+
     return () => {
       vapiInstance?.stop();
+      if (gamepadInterval) {
+        clearInterval(gamepadInterval);
+      }
     };
-  }, [apiKey]);
+  }, [apiKey, aiPathInstructions, assistantId]);
 
   const startCall = () => {
     if (vapi && aiPathInstructions) {
@@ -88,6 +118,7 @@ const VapiWidget: React.FC<VapiWidgetProps> = ({
     }}>
       {!isConnected ? (
         <button
+          ref={buttonRef}
           onClick={startCall}
           style={{
             background: '#12A594',

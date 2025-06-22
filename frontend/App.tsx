@@ -108,54 +108,71 @@ const App: React.FC = () => {
       const imageMimeType = plan.imageUrl.substring(5, plan.imageUrl.indexOf(';'));
 
       const prompt = `
-You are an expert indoor navigation assistant. Analyze the provided floor plan image.
-A user is at pixel coordinates (${Math.round(currentUserLocation.x)}, ${Math.round(currentUserLocation.y)}) and wants to go to an elevator at pixel coordinates (${Math.round(targetElevator.location.x)}, ${Math.round(targetElevator.location.y)}).
-The total image dimensions are width: ${plan.dimensions.width}px, height: ${plan.dimensions.height}px.
+You are an expert indoor navigation system. Your task is to analyze the provided floor plan image and generate a navigation path and instructions.
+The user is at pixel coordinates (${Math.round(currentUserLocation.x)}, ${Math.round(currentUserLocation.y)}) and wants to go to an elevator at pixel coordinates (${Math.round(targetElevator.location.x)}, ${Math.round(targetElevator.location.y)}).
+The image dimensions are: width ${plan.dimensions.width}px, height ${plan.dimensions.height}px.
 
-Your tasks are:
-1.  Determine a navigable path from the user's location to the elevator. The path should be a sequence of (x, y) pixel coordinates.
-    It should follow typical pathways visible on the floor plan (e.g., hallways, open areas) and attempt to go around obvious obstacles like solid walls. Ensure the path is logical for human navigation.
-2.  Provide concise, step-by-step textual instructions for the user to follow this path. Base the instructions on visual landmarks or directions visible in the floor plan image if possible.
+Your tasks:
+1.  **Path Coordinates (\`path_coordinates\`):**
+    *   Generate a sequence of (x, y) pixel coordinates representing a navigable path from the user's location to the elevator.
+    *   **CRITICAL CONSTRAINT: The path MUST NOT pass through any solid lines depicted on the floor plan, as these represent walls or other physical barriers. Imagine a person walking; they cannot pass through walls.**
+    *   **EQUALLY CRITICAL: The path MUST NOT cut through the corners of rooms or solid obstacles. Paths must maintain a realistic clearance, as if a person is walking and cannot clip through solid corners.**
+    *   The path should ideally follow clear pathways (hallways, open areas). Stay within these walkable areas.
+    *   The first point MUST be the user's starting location.
+    *   The last point MUST be the elevator's location.
+    *   The path should consist of straight line segments. Create intermediate points for turns.
+    *   Prioritize routes that appear to be designated walkways. Only cross lines if they clearly represent doorways or marked openings.
+    *   If a clear path considering obstacles and corners is too complex or cannot be determined, return an array with just the start and end points (a straight line).
 
-Respond ONLY with a valid JSON object with the following structure:
+2.  **Step-by-Step Instructions (\`step_by_step_instructions\`):**
+    *   Provide concise, turn-by-turn textual instructions based on the generated \`path_coordinates\`.
+    *   **Crucially, these instructions MUST use landmarks visible on the floor plan.**
+    *   When referring to landmarks from the floor plan (like room names, areas, or distinct symbols), use **Title Case** (e.g., "Pauley Ballroom West", "Kerr Lobby Registration", "Terrace Sign"). Do NOT use full ALL CAPS for landmarks unless they are explicitly shown that way on the map image itself.
+    *   Example: 'Walk towards the "Main Entrance" area.', 'Turn left after passing "Office Room 101".', 'The elevator is next to the "Water Fountain".'
+    *   **Avoid cardinal directions (North, South, East, West)** unless they are explicitly and clearly marked on the floor plan itself relative to the user's perspective. Focus on what the user can see on the map.
+    *   Keep instructions brief and clear (2-5 steps are ideal).
+    *   If the path is just a straight line (start and end points only), the instructions can be simpler, e.g., "Proceed directly towards the elevator." or "The elevator is straight ahead."
+
+Respond ONLY with a valid JSON object. Do not include any text or markdown formatting (like \`\`\`json) outside this JSON object.
+The JSON object must have the following structure:
 {
-  "path_coordinates": [
-    { "x": number, "y": number },
-    { "x": number, "y": number },
-    ...
-  ],
-  "step_by_step_instructions": [
-    "Instruction 1.",
-    "Instruction 2.",
-    ...
-  ]
+  "path_coordinates": [ /* array of { "x": number, "y": number } objects */ ],
+  "step_by_step_instructions": [ /* array of strings */ ]
 }
 
-Example of expected JSON output:
+Example of expected JSON output (ensure landmarks are in Title Case and path avoids corners):
 {
   "path_coordinates": [
     { "x": ${Math.round(currentUserLocation.x)}, "y": ${Math.round(currentUserLocation.y)} },
-    { "x": ${Math.round((currentUserLocation.x + targetElevator.location.x)/2)}, "y": ${Math.round((currentUserLocation.y + targetElevator.location.y)/2)} },
+    { "x": ${Math.round((currentUserLocation.x + targetElevator.location.x)/2)}, "y": ${Math.round(currentUserLocation.y)} }, 
+    { "x": ${Math.round((currentUserLocation.x + targetElevator.location.x)/2)}, "y": ${Math.round(targetElevator.location.y)} },
     { "x": ${Math.round(targetElevator.location.x)}, "y": ${Math.round(targetElevator.location.y)} }
   ],
   "step_by_step_instructions": [
-    "Proceed towards the center of the hall.",
-    "The elevator will be slightly to your right."
+    "Proceed forward along the current corridor.",
+    "Turn right when you reach the 'Main Hallway', ensuring you clear the corner.",
+    "Continue past the 'Reception Desk'.",
+    "The 'Elevator Group A' will be on your left."
   ]
 }
 
-If you cannot determine a clear path or instructions, return an empty array for "path_coordinates" AND an array with a single failure message for "step_by_step_instructions".
-Do not include any explanatory text or markdown formatting (like \`\`\`json) outside of the JSON object itself.
-The first point in "path_coordinates" MUST be the user's starting location, and the last point MUST be the elevator's location.
-Keep instructions brief and clear (2-5 steps).
-Consider common floor plan symbols. Lines are walls, gaps in lines are doors/openings. The path should not go through solid walls.
+If a path that avoids obvious obstacles and corners cannot be determined, or if it's a very short distance, this is also acceptable:
+{
+  "path_coordinates": [
+    { "x": ${Math.round(currentUserLocation.x)}, "y": ${Math.round(currentUserLocation.y)} },
+    { "x": ${Math.round(targetElevator.location.x)}, "y": ${Math.round(targetElevator.location.y)} }
+  ],
+  "step_by_step_instructions": [
+    "Proceed directly towards the elevator, visible on the map."
+  ]
+}
 `;
 
       const imagePart = { inlineData: { mimeType: imageMimeType, data: base64Data } };
       const textPart = { text: prompt };
 
       const response: GenerateContentResponse = await ai.models.generateContent({
-        model: 'gemini-2.5-flash-preview-04-17', // Use a capable model
+        model: 'gemini-2.5-flash-preview-04-17',
         contents: { parts: [imagePart, textPart] },
         config: { responseMimeType: "application/json" }
       });
@@ -167,26 +184,32 @@ Consider common floor plan symbols. Lines are walls, gaps in lines are doors/ope
 
       const aiResponse: AiPathResponse = JSON.parse(jsonString);
 
-      if (aiResponse.path_coordinates && aiResponse.path_coordinates.length >= 2 &&
-          Array.isArray(aiResponse.step_by_step_instructions) && aiResponse.step_by_step_instructions.length > 0) {
-        
-        // Ensure start and end points of AI path match user and target
-        const validatedPath = [...aiResponse.path_coordinates];
-        validatedPath[0] = currentUserLocation;
-        validatedPath[validatedPath.length - 1] = targetElevator.location;
+      if (aiResponse.path_coordinates && Array.isArray(aiResponse['step_by_step_instructions'])) {
+        if (aiResponse.path_coordinates.length >= 2 && aiResponse['step_by_step_instructions'].length > 0 ) {
+          const validatedPath = [...aiResponse.path_coordinates];
+          validatedPath[0] = currentUserLocation;
+          validatedPath[validatedPath.length - 1] = targetElevator.location;
 
-        setPath(validatedPath);
-        setAiPathInstructions(aiResponse.step_by_step_instructions);
-        setGpsStatus(`AI path to ${targetElevator.name} generated. Follow instructions.`);
+          setPath(validatedPath);
+          setAiPathInstructions(aiResponse['step_by_step_instructions']);
+          setGpsStatus(`AI path to ${targetElevator.name} generated. Follow instructions.`);
+        } else { 
+          setGpsStatus(`AI could not determine a multi-segment path for ${targetElevator.name}. Showing straight line.`);
+          setPath(calculatePath(currentUserLocation, targetElevator.location));
+          setAiPathInstructions(aiResponse['step_by_step_instructions'].length > 0 ? aiResponse['step_by_step_instructions'] : [
+            "AI was unable to determine a detailed path.",
+            "A straight line to the elevator is shown on the map.",
+          ]);
+        }
       } else {
-        throw new Error("AI returned invalid path or instructions.");
+        throw new Error("AI returned improperly structured path or instructions.");
       }
     } catch (error) {
       console.error("Error fetching AI path and instructions:", error);
       setGpsStatus(`AI pathfinding failed for ${targetElevator.name}. Showing straight line.`);
       setPath(calculatePath(currentUserLocation, targetElevator.location));
       setAiPathInstructions([
-        "AI was unable to determine a detailed path.",
+        "AI pathfinding system encountered an error.",
         "A straight line to the elevator is shown on the map.",
         "Please use visual cues on the floor plan to navigate."
       ]);
@@ -220,28 +243,24 @@ Consider common floor plan symbols. Lines are walls, gaps in lines are doors/ope
            setPath(undefined); // Clear path on arrival
         } else {
           status = `Navigating to ${selectedElevator.name}... User location updated by GPS.`;
-          // If we have an AI path, update its starting point to the new user location
-          // A more advanced approach might re-fetch the AI path if user deviates too much.
+          
           if (aiPathInstructions && path && path.length > 0) {
              const updatedAiPath = [...path];
              updatedAiPath[0] = pixelLocation;
              setPath(updatedAiPath);
           } else if (!aiPathInstructions && !isFetchingAiPath && (!oldUserLocation || calculateDistance(pixelLocation, oldUserLocation) > MARKER_SIZE * 2 )) {
-            // If no AI path exists (or significantly moved), and not currently fetching, attempt to fetch.
             fetchAiPathAndInstructions(pixelLocation, selectedElevator, currentFloorPlan);
           } else if (!isFetchingAiPath) {
-            // Fallback to straight line if no AI path and not fetching
             setPath(calculatePath(pixelLocation, selectedElevator.location));
           }
         }
       } else if (selectedElevator && !isNavigatingWithGps && !isFetchingAiPath) {
          fetchAiPathAndInstructions(pixelLocation, selectedElevator, currentFloorPlan);
       } else if (!selectedElevator && !isFetchingAiPath) {
-        // If initial GPS lock and no target yet, find nearest
         const nearest = findNearestElevator(pixelLocation, currentFloorPlan.elevators);
         setNearestElevator(nearest);
         if (nearest) {
-          setPath(calculatePath(pixelLocation, nearest.location)); // Show straight line to nearest
+          setPath(calculatePath(pixelLocation, nearest.location)); 
         }
       }
       setGpsStatus(status);
@@ -358,20 +377,20 @@ Consider common floor plan symbols. Lines are walls, gaps in lines are doors/ope
     }
   }, [currentFloorPlan, isAnalyzingPlan, userLocation, stopGpsNavigation, isFetchingAiPath]);
 
-  // Effect to update nearest elevator (for display only when no target is selected) and fallback straight path
+ 
  useEffect(() => {
     if (userLocation && currentFloorPlan) {
-      if (!selectedElevator) { // Only update nearest if no elevator is actively selected for navigation
+      if (!selectedElevator) { 
         const foundNearest = findNearestElevator(userLocation, currentFloorPlan.elevators);
         setNearestElevator(foundNearest);
-        if (foundNearest && !isFetchingAiPath && !aiPathInstructions) { // Draw straight path to nearest if no AI path exists/pending
+        if (foundNearest && !isFetchingAiPath && !aiPathInstructions) { 
           setPath(calculatePath(userLocation, foundNearest.location));
         } else if (!foundNearest) {
-          if (!isFetchingAiPath) setPath(undefined); // Clear path if no nearest and no AI path pending
+          if (!isFetchingAiPath) setPath(undefined); 
         }
       } else {
-        setNearestElevator(null); // Clear nearest if an elevator is selected
-        // Path to selectedElevator is handled by fetchAiPathAndInstructions or its fallbacks
+        setNearestElevator(null); 
+        
          if (!isFetchingAiPath && !aiPathInstructions) {
             setPath(calculatePath(userLocation, selectedElevator.location));
         }
@@ -402,11 +421,13 @@ Consider common floor plan symbols. Lines are walls, gaps in lines are doors/ope
 
     try {
       const base64Data = imageUrl.substring(imageUrl.indexOf(',') + 1);
-      const prompt = `Analyze this floor plan image to identify the locations of all elevators. Usually, elevators are shown as a rectangle with a cross in floor plans, or labeled "ELEV", "Lift", or similar.
+      const prompt = `Analyze this floor plan image to identify the locations of all elevators.
+Look for common visual symbols for elevators, such as a rectangle with a cross (X) inside it, or two adjacent rectangles with opposing arrows. Also consider areas explicitly labeled "ELEVATOR", "ELEV", or "LIFT" (case-insensitive).
+
 For each elevator detected, provide:
 1. Its x-coordinate as a percentage of the image's total width (from the left edge).
 2. Its y-coordinate as a percentage of the image's total height (from the top edge).
-3. A brief description of the elevator or its surroundings (e.g., "Elevator near main lobby", "Small elevator, West corridor").
+3. A brief description of the elevator or its surroundings (e.g., "Elevator near main lobby", "Small elevator, West corridor", "Elevator labeled 'LIFT B'").
 
 Respond ONLY with a valid JSON array of objects. Each object in the array must represent a single elevator and must have the following keys:
 - "x_percent": A number representing the x-coordinate percentage (e.g., 25.5).

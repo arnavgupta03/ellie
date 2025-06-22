@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Point, Elevator, FloorPlan } from '../types';
-import { USER_MARKER_COLOR, ELEVATOR_MARKER_COLOR, NEAREST_ELEVATOR_MARKER_COLOR, PATH_COLOR, MARKER_SIZE } from '../constants';
+import { USER_MARKER_COLOR, ELEVATOR_MARKER_COLOR, NEAREST_ELEVATOR_MARKER_COLOR, MARKER_SIZE } from '../constants'; // PATH_COLOR removed as it's not used directly here anymore
 
 interface FloorPlanDisplayProps {
   floorPlan: FloorPlan;
@@ -78,13 +78,13 @@ const FloorPlanDisplay: React.FC<FloorPlanDisplayProps> = ({
           let zIndex = 10;
           let currentMarkerSize = MARKER_SIZE;
 
-          if (isNearest && !isSelected) { // Prioritize selected styling over nearest if it's the same
+          if (isNearest && !isSelected) { 
             bgColorClass = `bg-${NEAREST_ELEVATOR_MARKER_COLOR}`;
             zIndex = 30;
             currentMarkerSize = MARKER_SIZE * 1.5;
           } else if (isSelected) {
-            bgColorClass = `bg-amber-400`; // Material accent (amber)
-            zIndex = 20; // Ensure selected is above nearest if they overlap but aren't same
+            bgColorClass = `bg-amber-400`; 
+            zIndex = 20; 
             currentMarkerSize = MARKER_SIZE * 1.25;
           }
           
@@ -115,27 +115,16 @@ const FloorPlanDisplay: React.FC<FloorPlanDisplayProps> = ({
             height={floorPlan.dimensions.height}
             style={{ zIndex: 5 }}
           >
-            <defs>
-              <filter id="blurFilter" x="-50%" y="-50%" width="200%" height="200%">
-                <feGaussianBlur in="SourceGraphic" stdDeviation="3" />
-              </filter>
-            </defs>
             <polyline
               points={pathPointsToString(path)}
-              stroke={`var(--tw-path-color, #dc2626)`}
+              stroke="#3b82f6" // Changed to blue (Tailwind blue-500)
               strokeWidth="6"
-              strokeOpacity="0.7"
-              fill="none" // Important for polyline
-              filter="url(#blurFilter)"
+              strokeOpacity="1" 
+              fill="none" 
             />
           </svg>
         )}
       </div>
-      <style>{`
-        :root {
-          --tw-path-color: theme('colors.${PATH_COLOR}');
-        }
-      `}</style>
     </div>
   );
 };

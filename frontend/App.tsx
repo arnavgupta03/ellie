@@ -565,52 +565,6 @@ Do not include any explanatory text or markdown formatting (like \`\`\`json) out
                 {!ai && <p className="text-xs text-amber-400 mt-1">AI analysis (Gemini) unavailable. Check API Key.</p>}
               </div>
             </div>
-
-            <hr className="border-gray-700 my-6" />
-
-            <div>
-              <h2 className="text-xl font-semibold mb-3 text-indigo-300 border-b border-gray-700 pb-2">Navigation & Location</h2>
-              {isNavigatingWithGps && currentFloorPlan && (
-                 <button
-                    onClick={() => stopGpsNavigation()} disabled={isFetchingAiPath}
-                    className={`w-full text-white font-semibold py-2.5 px-4 rounded-md mb-3 transition shadow-md hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-opacity-75 ${
-                        isFetchingAiPath ? 'bg-gray-700 text-gray-500 cursor-not-allowed' : 'bg-red-600 hover:bg-red-700 focus:ring-red-500'
-                    }`}
-                > Cancel GPS Navigation </button>
-              )}
-              <div className="text-sm text-gray-300 mb-2 h-24 overflow-y-auto custom-scrollbar p-3 bg-gray-700 rounded-md relative shadow-inner">
-                {gpsStatus}
-                {(isAnalyzingPlan || isFetchingAiPath) &&  (
-                    <div className="absolute inset-0 bg-gray-700 bg-opacity-50 flex items-center justify-center rounded-md pointer-events-none">
-                        <div className="w-5 h-5 border-t-transparent border-indigo-400 rounded-full animate-spin" style={{borderWidth: '3px'}}></div>
-                    </div>
-                )}
-                 {isNavigatingWithGps && !gpsStatus.includes("Arrived") && !gpsStatus.includes("Error") && !gpsStatus.includes("AI is planning") && !gpsStatus.includes("AI pathfinding failed") && !isAnalyzingPlan && !isFetchingAiPath && (
-                    <div className="absolute inset-0 bg-gray-700 bg-opacity-25 flex items-center justify-center pointer-events-none rounded-md">
-                        <div className="w-5 h-5 border-t-transparent border-green-400 rounded-full animate-spin" style={{borderWidth: '3px'}}></div>
-                    </div>
-                )}
-              </div>
-
-              {userLocation && currentFloorPlan && (
-                <div className="mt-3 text-sm p-3 bg-gray-700 rounded-md shadow-inner">
-                  <p className={`font-semibold ${isGpsDerived ? 'text-indigo-400' : 'text-blue-400'}`}>
-                      📍 Your Location {isGpsDerived ? "(Live GPS)" : "(Manual)"}: ({Math.round(userLocation.x)}, {Math.round(userLocation.y)})
-                  </p>
-                  {userGeoLocation && isGpsDerived && <p className="text-xs text-gray-400">GPS: {userGeoLocation.latitude.toFixed(5)}, {userGeoLocation.longitude.toFixed(5)}</p>}
-                </div>
-              )}
-              {targetElevatorGps && selectedElevator && currentFloorPlan && (
-                 <div className="mt-2 text-xs p-3 bg-gray-700 rounded-md shadow-inner">
-                    <p className="font-semibold text-sky-400">🎯 Target: {selectedElevator.name}</p>
-                    <p className="text-gray-400">Est. GPS: {targetElevatorGps.latitude.toFixed(5)}, {targetElevatorGps.longitude.toFixed(5)}
-                    {" (Note: Elevator GPS speculative for uploaded plans)"}</p>
-                 </div>
-              )}
-               {currentFloorPlan && <p className="mt-3 text-xs text-gray-500">
-                  Tip: Click map to set location & find nearest elevator for GPS nav. Or click an elevator icon directly. AI pathfinding is experimental.
-              </p>}
-            </div>
           </div>
 
           {currentFloorPlan && (

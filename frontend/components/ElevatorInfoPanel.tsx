@@ -38,9 +38,9 @@ const ElevatorInfoPanel: React.FC<ElevatorInfoPanelProps> = ({
     return (
       <div className={panelBaseClasses}>
         <h3 className="text-xl font-semibold mb-2 text-indigo-300">Elevator Information</h3>
-        <p className="text-gray-300">No elevator selected.</p>
-        { !userLocation && <p className="mt-2 text-sm text-blue-400">Click on the map to set your location to find the nearest elevator.</p>}
-        { userLocation && <p className="mt-2 text-sm text-gray-300">Click an elevator icon on the map to see its details.</p>}
+        {/* <p className="text-gray-300">No elevator selected.</p> */}
+        { !userLocation && <p className="mt-2 text-md text-blue-400">Click on the map to set your location to find the nearest elevator.</p>}
+        { userLocation && <p className="mt-2 text-md text-gray-300">Click an elevator icon on the map to see its details.</p>}
       </div>
     );
   }

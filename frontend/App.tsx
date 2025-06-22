@@ -9,8 +9,8 @@ import { findNearestElevator, calculatePath, mapGeoToPixel, mapPixelToGeo, calcu
 
 let ai: GoogleGenAI | null = null;
 try {
-  if (process.env.API_KEY) {
-    ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  if (import.meta.env.VITE_GEMINI_API_KEY) {
+    ai = new GoogleGenAI({ apiKey: import.meta.env.VITE_GEMINI_API_KEY });
   } else {
     console.warn("API_KEY environment variable not set. Gemini features will be unavailable.");
   }
@@ -272,7 +272,7 @@ If a path that avoids obvious obstacles and corners cannot be determined, or if 
       }
       setGpsStatus(status);
     }
-  }, [currentFloorPlan, isNavigatingWithGps, selectedElevator, stopGpsNavigation, aiPathInstructions, isFetchingAiPath, path, userLocation]);
+  }, [currentFloorPlan, isNavigatingWithGps, selectedElevator, stopGpsNavigation, aiPathInstructions, isFetchingAiPath, path, userLocation, userGeoLocation]);
 
   useEffect(() => {
     if (!currentFloorPlan || !navigator.geolocation) {
@@ -541,7 +541,7 @@ Do not include any explanatory text or markdown formatting (like \`\`\`json) out
     <div className="min-h-screen bg-gray-900 text-gray-100 p-4 sm:p-8 flex flex-col items-center">
       <header className="mb-6 sm:mb-8 text-center">
         <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-indigo-400 via-sky-400 to-blue-400">
-          Elli
+          Ellie
         </h1>
       </header>
 
@@ -669,7 +669,7 @@ Do not include any explanatory text or markdown formatting (like \`\`\`json) out
       </div>
 
       <footer className="mt-12 text-center text-sm text-gray-500">
-        <p>&copy; {new Date().getFullYear()} Elli. All rights reserved.</p>
+        <p>&copy; {new Date().getFullYear()} Ellie. All rights reserved.</p>
         <p>AI features (elevator detection, pathfinding, GPS navigation) are experimental. Use with caution and verify important navigation.</p>
       </footer>
       <style>{`

@@ -1,6 +1,7 @@
-
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Elevator, Point } from '../types';
+import VapiWidget from './VapiWidget';
+import { VapiClient } from '@vapi-ai/server-sdk';
 
 interface ElevatorInfoPanelProps {
   elevator?: Elevator | null;
@@ -78,11 +79,18 @@ const ElevatorInfoPanel: React.FC<ElevatorInfoPanelProps> = ({
             </div>
           )}
           {!isFetchingAiPath && aiPathInstructions && aiPathInstructions.length > 0 && (
-            <ul className="list-decimal list-inside space-y-1 text-sm text-gray-300">
-              {aiPathInstructions.map((step, index) => (
-                <li key={index}>{step}</li>
-              ))}
-            </ul>
+            <div>
+              <ul className="list-decimal list-inside space-y-1 text-sm text-gray-300">
+                {aiPathInstructions.map((step, index) => (
+                  <li key={index}>{step}</li>
+                ))}
+              </ul>
+              <VapiWidget
+                apiKey={import.meta.env.VITE_VAPI_PUBLIC_API_KEY}
+                assistantId={import.meta.env.VITE_VAPI_ASSISTANT_ID}
+                aiPathInstructions={aiPathInstructions}
+              />
+            </div>
           )}
            {!isFetchingAiPath && aiPathInstructions && aiPathInstructions.length === 0 && (
              <p className="text-sm text-gray-400">AI could not generate specific instructions. Please use the map path.</p>
